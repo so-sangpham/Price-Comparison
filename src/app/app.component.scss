@@ -1,0 +1,136 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f5f7fa;
+
+  .navbar {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+
+    .navbar-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .navbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+
+        i {
+          font-size: 1.8rem;
+        }
+
+        span {
+          background: linear-gradient(135deg, #3498db, #2980b9);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+      }
+
+      .navbar-links {
+        display: flex;
+        gap: 24px;
+
+        .nav-link {
+          color: white;
+          text-decoration: none;
+          font-weight: 600;
+          transition: all 0.3s ease;
+          padding: 8px 12px;
+          border-radius: 6px;
+
+          &:hover {
+            background: rgba(52, 152, 219, 0.3);
+            transform: translateY(-2px);
+          }
+        }
+      }
+    }
+  }
+
+  .content-wrapper {
+    display: flex;
+    flex: 1;
+    background: #f5f7fa;
+
+    app-left-menu.full-layout {
+      flex: 1;
+      width: 100%;
+      height: calc(100vh - 70px); // approx navbar height
+      display: flex;
+    }
+  }
+
+  .footer {
+    background: #2c3e50;
+    color: white;
+    padding: 30px 20px;
+    margin-top: 40px;
+    border-top: 1px solid #34495e;
+
+    .footer-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      text-align: center;
+
+      p {
+        margin: 0 0 8px 0;
+        font-size: 0.95rem;
+        opacity: 0.9;
+
+        &:last-child {
+          margin: 0;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    .content-wrapper {
+      flex-direction: column;
+
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+        max-height: 40vh;
+      }
+    }
+
+    .navbar {
+      .navbar-content {
+        flex-direction: column;
+        gap: 16px;
+
+        .navbar-brand {
+          font-size: 1.3rem;
+
+          i {
+            font-size: 1.5rem;
+          }
+        }
+
+        .navbar-links {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+  }
+}

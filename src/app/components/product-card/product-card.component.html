@@ -1,0 +1,40 @@
+<div class="product-card">
+  <div class="card-image-container">
+    <img [src]="product.image" [alt]="product.name" class="card-image" />
+    <div class="card-category">{{ product.category }}</div>
+  </div>
+
+  <div class="card-content">
+    <h3 class="product-name">{{ product.name }}</h3>
+
+    <div class="rating-section" *ngIf="product.rating">
+      <div class="stars">
+        <span *ngFor="let star of getRatingStars()" class="star"
+          >★</span
+        >
+      </div>
+      <span class="review-count">({{ product.reviewCount }} reviews)</span>
+    </div>
+
+    <p class="product-description">{{ product.description }}</p>
+
+    <div class="price-section">
+      <div class="lowest-price">
+        <span class="price-label">Lowest Price</span>
+        <span class="price-value">${{ product.lowestPrice.toFixed(2) }}</span>
+      </div>
+      <div class="seller-info">
+        <span class="seller-count">{{ product.sellerCount }} Sellers</span>
+      </div>
+    </div>
+
+    <div class="card-actions">
+      <button class="btn btn-primary" (click)="onCompareClick()">
+        <i class="pi pi-search"></i> Compare Prices
+      </button>
+      <button class="btn btn-secondary" (click)="navigateToDetails()">
+        View Details
+      </button>
+    </div>
+  </div>
+</div>

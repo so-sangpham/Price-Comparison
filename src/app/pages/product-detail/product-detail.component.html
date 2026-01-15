@@ -1,0 +1,226 @@
+<div class="product-detail-container" *ngIf="!loading">
+  <button class="back-btn" (click)="goBack()">
+    <i class="pi pi-arrow-left"></i> Back
+  </button>
+
+  <!-- Competitor Products View -->
+  <div class="competitor-products-view" *ngIf="isCompetitorView && competitor">
+    <div class="competitor-header">
+      <h2>{{ competitor.name }} - Products</h2>
+    </div>
+
+    <div class="products-table-container" *ngIf="competitorProducts.length > 0">
+      <p-table [value]="competitorProducts" [paginator]="true" [rows]="10" 
+               responsiveLayout="scroll" styleClass="p-datatable-gridlines"
+               [rowsPerPageOptions]="[10, 20, 50]">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>SKU</th>
+            <th>Product Name</th>
+            <th>Price</th>
+            <th>Product URL</th>
+            <th>Actions</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-item>
+          <tr>
+            <td>{{ item.product.sku }}</td>
+            <td>{{ item.product.productName }}</td>
+            <td class="price-cell">
+              <span *ngIf="getCompetitorPrice(item) !== 'N/A'" class="price-value">
+                ${{ getCompetitorPrice(item) }}
+              </span>
+              <span *ngIf="getCompetitorPrice(item) === 'N/A'" class="price-na">
+                N/A
+              </span>
+            </td>
+            <td>
+              <a [href]="item.productUrl" target="_blank" class="product-link">
+                <i class="pi pi-external-link"></i> View
+              </a>
+            </td>
+            <td class="actions-cell">
+              <button pButton type="button" 
+                      label="Get Price" 
+                      icon="pi pi-tag"
+                      class="p-button-sm p-button-info"
+                      (click)="getPrice(item)"
+                      [disabled]="getCompetitorPrice(item) === 'N/A'"></button>
+              <button pButton type="button" 
+                      label="Detail" 
+                      icon="pi pi-search"
+                      class="p-button-sm p-button-secondary"
+                      (click)="showProductDetail(item)"></button>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+
+    <div class="no-products" *ngIf="competitorProducts.length === 0">
+      <p>No products found for this competitor.</p>
+    </div>
+  </div>
+
+  <!-- Original Product Detail View -->
+  <div class="product-view" *ngIf="!isCompetitorView && product">
+    <div class="product-images">
+      <img
+        [src]="product.image"
+        [alt]="product.name"
+        class="main-image"
+      />
+    </div>
+
+    <div class="product-info-section">
+      <div class="category-badge">{{ product.category }}</div>
+
+      <h1 class="product-title">{{ product.name }}</h1>
+
+      <div class="rating-section" *ngIf="product.rating">
+        <div class="stars">
+          <span *ngFor="let star of getRatingStars()" class="star">★</span>
+        </div>
+        <span class="rating-value">{{ product.rating }} / 5</span>
+        <span class="review-count">({{ product.reviewCount }} reviews)</span>
+      </div>
+
+      <p class="description">{{ product.description }}</p>
+
+      <div class="price-info">
+        <div class="lowest-price">
+          <span class="label">Lowest Price Available</span>
+          <span class="price">${{ product.lowestPrice.toFixed(2) }}</span>
+        </div>
+        <div class="seller-count">
+          <span class="label">Available from</span>
+          <span class="count">{{ product.sellerCount }} Sellers</span>
+        </div>
+      </div>
+
+      <div class="specs">
+        <h3>Product Specifications</h3>
+        <div class="spec-list">
+          <div class="spec-item">
+            <span class="spec-label">Category:</span>
+            <span class="spec-value">{{ product.category }}</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-label">Number of Sellers:</span>
+            <span class="spec-value">{{ product.sellerCount }}</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-label">Price Range:</span>
+            <span class="spec-value">
+              ${{ product.lowestPrice.toFixed(2) }} -
+              ${{ getMaxPrice().toFixed(2) }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sellers-container" *ngIf="!isCompetitorView && product">
+    <h2>Compare Prices from All Sellers</h2>
+
+    <p-accordion [multiple]="true">
+      <p-accordionTab
+        *ngFor="let seller of product.sellers"
+        [header]="getSellerHeader(seller)"
+        [selected]="true"
+      >
+        <div class="seller-detail">
+          <div class="seller-header">
+            <img
+              [src]="seller.logo"
+              [alt]="seller.name"
+              class="seller-logo"
+            />
+            <div class="seller-details">
+              <h3>{{ seller.name }}</h3>
+              <div class="seller-stats">
+                <span class="rating" *ngIf="seller.rating">
+                  <i class="pi pi-star-fill"></i>
+                  {{ seller.rating }} ({{ seller.reviewCount }} reviews)
+                </span>
+                <span
+                  class="availability"
+                  [class.in-stock]="seller.availability === 'In Stock'"
+                  [class.limited]="seller.availability === 'Limited Stock'"
+                >
+                  {{ seller.availability }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="seller-action">
+            <div class="price-box">
+              <span class="price-label">Price</span>
+              <span class="price-value">${{ seller.price.toFixed(2) }}</span>
+            </div>
+            <button
+              pButton
+              type="button"
+              label="Go to Store"
+              icon="pi pi-external-link"
+              class="store-btn"
+              (click)="goToStore(seller.name)"
+            ></button>
+          </div>
+        </div>
+      </p-accordionTab>
+    </p-accordion>
+  </div>
+
+  <!-- Product Detail Dialog -->
+  <p-dialog [(visible)]="detailDialogVisible" 
+            [header]="selectedProduct ? 'Product Details' : ''"
+            [modal]="true" 
+            [style]="{width: '50vw'}"
+            [breakpoints]="{'960px': '75vw', '640px': '90vw'}"
+            (onHide)="closeDetailDialog()">
+    <div class="product-detail-dialog" *ngIf="selectedProduct">
+      <div class="detail-section">
+        <div class="detail-row">
+          <span class="detail-label">SKU:</span>
+          <span class="detail-value">{{ selectedProduct.product.sku }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Product Name:</span>
+          <span class="detail-value">{{ selectedProduct.product.productName }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Competitor Product Name:</span>
+          <span class="detail-value">{{ selectedProduct.competitorProductName }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Competitor Price:</span>
+          <span class="detail-value price" *ngIf="getCompetitorPrice(selectedProduct) !== 'N/A'">
+            ${{ getCompetitorPrice(selectedProduct) }}
+          </span>
+          <span class="detail-value price-na" *ngIf="getCompetitorPrice(selectedProduct) === 'N/A'">
+            N/A
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Product URL:</span>
+          <a [href]="selectedProduct.productUrl" target="_blank" class="detail-link">
+            Visit Product Page
+          </a>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Created Date:</span>
+          <span class="detail-value">{{ selectedProduct.createDateUtc | date: 'medium' }}</span>
+        </div>
+      </div>
+    </div>
+  </p-dialog>
+
+  
+</div>
+
+<div class="loading" *ngIf="loading">
+  <p>Loading product details...</p>
+</div>

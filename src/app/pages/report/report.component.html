@@ -1,0 +1,81 @@
+<div class="report-container">
+    <div class="section-header">
+        <h2>Reports</h2>
+        <button class="export-btn" (click)="exportReport()" [disabled]="isLoading">
+            <i class="pi pi-download"></i>
+            <span>{{ isLoading ? 'Loading...' : 'Export' }}</span>
+        </button>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-container" *ngIf="!isLoading && reports.length > 0">
+        <div class="search-input-wrapper">
+            <i class="pi pi-search"></i>
+            <input 
+                type="text" 
+                placeholder="Search by SKU, Product Name, or Competitor..." 
+                [(ngModel)]="searchKeyword"
+                (input)="onSearchChange(searchKeyword)"
+                class="search-input"
+            />
+            <button 
+                *ngIf="searchKeyword" 
+                class="clear-btn" 
+                (click)="onSearchChange('')"
+                title="Clear search"
+            >
+                <i class="pi pi-times"></i>
+            </button>
+        </div>
+        <span class="search-results-count" *ngIf="searchKeyword">
+            {{ filteredReports.length }} of {{ reports.length }} results
+        </span>
+    </div>
+
+    <!-- Error message -->
+    <div *ngIf="error" class="error-message">
+        {{ error }}
+    </div>
+
+    <!-- Loading state -->
+    <div *ngIf="isLoading" class="loading-message">
+        <i class="pi pi-spinner pi-spin"></i>
+        <span>Loading reports...</span>
+    </div>
+
+    <!-- Table -->
+    <div *ngIf="!isLoading && filteredReports.length > 0" class="table-container report-table-container">
+        <p-table [value]="filteredReports" [paginator]="true" [rows]="5" responsiveLayout="scroll"
+         styleClass="p-datatable-gridlines" 
+            [rowsPerPageOptions]="[5, 10, 20]">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>SKU</th>
+                    <th style="min-width: 220px;">Product Name</th>
+                    <th *ngFor="let competitor of competitorNames">{{ competitor }}</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-report>
+                <tr>
+                    <td>{{ report.sku }}</td>
+                    <td>{{ report.productName }}</td>
+                    <td *ngFor="let competitor of competitorNames">
+                        {{ getCompetitorPrice(report, competitor) === 'N/A' ? '' : '$' + getCompetitorPrice(report, competitor) }}
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+
+    <!-- No data message -->
+    <div *ngIf="!isLoading && reports.length === 0 && !error" class="no-data-message">
+        <i class="pi pi-inbox"></i>
+        <span>No reports available</span>
+    </div>
+
+    <!-- No search results message -->
+    <div *ngIf="!isLoading && searchKeyword && filteredReports.length === 0" class="no-data-message">
+        <i class="pi pi-search"></i>
+        <span>No results found for "{{ searchKeyword }}"</span>
+    </div>
+</div>

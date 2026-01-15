@@ -1,0 +1,37 @@
+<div class="left-menu-container">
+  <!-- Sidebar Menu -->
+  <div class="sidebar-menu">
+    <!-- Menu Items -->
+    <div class="menu-section">
+      <div *ngFor="let item of menuItems" 
+           class="menu-group">
+        <button 
+          class="menu-item"
+          [class.active]="isMenuItemActive(item.id)"
+          (click)="selectMenuItem(item)">
+          <i [class]="'pi ' + item.icon"></i>
+          <span>{{ item.label }}</span>
+          <span *ngIf="item.children" class="expand-icon">
+            <i [class]="'pi ' + (item.isExpanded ? 'pi-chevron-down' : 'pi-chevron-right')"></i>
+          </span>
+        </button>
+
+        <!-- Submenu Items -->
+        <div *ngIf="item.children && item.isExpanded" class="submenu">
+          <button 
+            *ngFor="let child of item.children"
+            class="submenu-item"
+            (click)="selectSubItem(child)">
+            <i [class]="'pi ' + child.icon"></i>
+            <span>{{ child.label }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content Area -->
+  <div class="menu-content">
+    <router-outlet></router-outlet>
+  </div>
+</div>
