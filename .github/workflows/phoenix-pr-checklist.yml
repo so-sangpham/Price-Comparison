@@ -1,0 +1,403 @@
+# ============================================================
+# Phoenix PR Checklist — Automated Code Review
+# BERPLTech Coding Standards v1.8
+#
+# HOW TO USE IN ANY PROJECT:
+#   1. Copy this file to your repo: .github/workflows/phoenix-pr-checklist.yml
+#   2. Commit & push to GitHub
+#   3. Done — runs automatically on every PR to main/develop
+#
+# WHAT IT CHECKS (from Section 8 of Coding Standards):
+#   [Backend]  No fire-and-forget async (_ = SomeAsync())
+#   [Backend]  No new HttpClient() — must use typed clients
+#   [Backend]  No SQL string concatenation (injection risk)
+#   [Backend]  No swallowed exceptions (catch { return null; })
+#   [Backend]  No $"" interpolation in log calls
+#   [Frontend] No `any` types in TypeScript
+#   [Frontend] Missing takeUntil(destroy$) on subscriptions
+#   [Frontend] Missing debounceTime on user input observables
+# ============================================================
+
+name: Phoenix PR Checklist
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    # Optional: only trigger when these file types change
+    paths:
+      - '**/*.cs'
+      - '**/*.ts'
+      - '**/*.html'
+
+jobs:
+  # ─────────────────────────────────────────────
+  # JOB 1: Backend Static Analysis (C# / .NET)
+  # ─────────────────────────────────────────────
+  backend-checklist:
+    name: Backend Checklist (C#)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history so we can diff against base branch
+          fetch-depth: 0
+
+      # ── Check 1: No fire-and-forget async ──────────────────
+      # BAD:  _ = SomeMethodAsync();
+      # GOOD: await SomeMethodAsync();
+      - name: "[Backend] No fire-and-forget async"
+        run: |
+          echo "🔍 Checking for fire-and-forget async patterns..."
+
+          # Search all changed .cs files for the pattern
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.cs')
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "✅ No .cs files changed — skipping."
+            exit 0
+          fi
+
+          # Pattern: "_ = SomeAsync(" or "_ = Method(" where method ends in Async
+          MATCHES=$(echo "$CHANGED_FILES" | xargs grep -n "_ = .*Async(" 2>/dev/null || true)
+
+          if [ -n "$MATCHES" ]; then
+            echo ""
+            echo "❌ FAIL: Fire-and-forget async detected!"
+            echo "   Rule: Section 2.8 — No fire-and-forget (_ = SomeAsync())"
+            echo "   Fix:  Use 'await' or register a background job via Hangfire"
+            echo ""
+            echo "$MATCHES"
+            exit 1
+          fi
+
+          echo "✅ No fire-and-forget async found."
+
+      # ── Check 2: No new HttpClient() ───────────────────────
+      # BAD:  var client = new HttpClient();
+      # GOOD: Use IHttpClientFactory or typed clients via AddHttpClient<T,T>()
+      - name: "[Backend] No new HttpClient()"
+        run: |
+          echo "🔍 Checking for raw new HttpClient() usage..."
+
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.cs')
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "✅ No .cs files changed — skipping."
+            exit 0
+          fi
+
+          MATCHES=$(echo "$CHANGED_FILES" | xargs grep -n "new HttpClient()" 2>/dev/null || true)
+
+          if [ -n "$MATCHES" ]; then
+            echo ""
+            echo "❌ FAIL: Raw HttpClient instantiation detected!"
+            echo "   Rule: Section 2.6 — Always use AddHttpClient<TInterface, TImplementation>()"
+            echo "   Fix:  Inject IHttpClientFactory or use a typed client"
+            echo ""
+            echo "$MATCHES"
+            exit 1
+          fi
+
+          echo "✅ No raw HttpClient() found."
+
+      # ── Check 3: No SQL string concatenation ───────────────
+      # BAD:  var sql = "SELECT * FROM Users WHERE Id = " + id;
+      # BAD:  var sql = $"SELECT * FROM Users WHERE Id = {id}";
+      # GOOD: Use DynamicParameters with @Param placeholders
+      - name: "[Backend] No SQL string concatenation"
+        run: |
+          echo "🔍 Checking for SQL string concatenation (injection risk)..."
+
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.cs')
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "✅ No .cs files changed — skipping."
+            exit 0
+          fi
+
+          # Look for SQL strings that use + or $"" with what looks like a variable
+          # Pattern: sql string combined with variable concatenation
+          MATCHES=$(echo "$CHANGED_FILES" | xargs grep -n \
+            -e 'sql.*=.*".*SELECT.*" *+' \
+            -e 'sql.*=.*".*WHERE.*" *+' \
+            -e 'sql.*=.*\$".*SELECT.*{' \
+            -e 'sql.*=.*\$".*WHERE.*{' \
+            2>/dev/null || true)
+
+          if [ -n "$MATCHES" ]; then
+            echo ""
+            echo "❌ FAIL: SQL string concatenation detected!"
+            echo "   Rule: Section 4.3 — Always use parameterized queries (@Param)"
+            echo "   Fix:  Use DynamicParameters and @ParamName placeholders"
+            echo ""
+            echo "$MATCHES"
+            exit 1
+          fi
+
+          echo "✅ No SQL string concatenation found."
+
+      # ── Check 4: No swallowed exceptions ───────────────────
+      # BAD:  catch (Exception ex) { return null; }
+      # BAD:  catch { return null; }
+      # GOOD: throw typed exception or let it propagate
+      - name: "[Backend] No swallowed exceptions"
+        run: |
+          echo "🔍 Checking for swallowed exceptions..."
+
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.cs')
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "✅ No .cs files changed — skipping."
+            exit 0
+          fi
+
+          MATCHES=$(echo "$CHANGED_FILES" | xargs grep -n \
+            -e 'catch.*{[[:space:]]*return null' \
+            -e 'catch.*{[[:space:]]*return 0' \
+            -e 'catch.*{[[:space:]]*}' \
+            2>/dev/null || true)
+
+          if [ -n "$MATCHES" ]; then
+            echo ""
+            echo "❌ FAIL: Swallowed exception detected!"
+            echo "   Rule: Section 2.7 — Never swallow exceptions silently"
+            echo "   Fix:  Either handle meaningfully or let them propagate"
+            echo ""
+            echo "$MATCHES"
+            exit 1
+          fi
+
+          echo "✅ No swallowed exceptions found."
+
+      # ── Check 5: No $"" interpolation in log calls ─────────
+      # BAD:  _logger.LogInformation($"Building tiers for {id}");
+      # GOOD: _logger.LogInformation("Building tiers for {StudyGroupId}", id);
+      - name: "[Backend] No string interpolation in log calls"
+        run: |
+          echo "🔍 Checking for string interpolation in log calls..."
+
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.cs')
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "✅ No .cs files changed — skipping."
+            exit 0
+          fi
+
+          MATCHES=$(echo "$CHANGED_FILES" | xargs grep -n \
+            -e 'Log\(.*\$"' \
+            -e 'LogInformation(\$"' \
+            -e 'LogWarning(\$"' \
+            -e 'LogError(\$"' \
+            -e 'LogDebug(\$"' \
+            -e 'LogCritical(\$"' \
+            2>/dev/null || true)
+
+          if [ -n "$MATCHES" ]; then
+            echo ""
+            echo "❌ FAIL: String interpolation in log calls detected!"
+            echo "   Rule: Section 7.1 — Always use message templates with named placeholders"
+            echo "   Fix:  _logger.LogInformation(\"Msg {Prop}\", value)  — not \$\"Msg {value}\""
+            echo ""
+            echo "$MATCHES"
+            exit 1
+          fi
+
+          echo "✅ No string interpolation in log calls found."
+
+  # ─────────────────────────────────────────────
+  # JOB 2: Frontend Static Analysis (Angular/TS)
+  # ─────────────────────────────────────────────
+  frontend-checklist:
+    name: Frontend Checklist (Angular/TS)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── Check 6: No `any` types ────────────────────────────
+      # BAD:  data: any
+      # GOOD: data: Quote[]  or  data: unknown
+      - name: "[Frontend] No 'any' types in TypeScript"
+        run: |
+          echo "🔍 Checking for 'any' types in TypeScript files..."
+
+          # Exclude spec files and node_modules
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            -- '*.ts' \
+            | grep -v '\.spec\.ts$' \
+            | grep -v 'node_modules' \
+            || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "✅ No .ts files changed — skipping."
+            exit 0
+          fi
+
+          # Match ": any" or "<any>" but exclude comments
+          MATCHES=$(echo "$CHANGED_FILES" | xargs grep -n \
+            -e ': any[,;)\s]' \
+            -e '<any>' \
+            2>/dev/null \
+            | grep -v '^\s*//' \
+            | grep -v '^\s*\*' \
+            || true)
+
+          if [ -n "$MATCHES" ]; then
+            echo ""
+            echo "❌ FAIL: 'any' type detected in TypeScript!"
+            echo "   Rule: Section 3.6 — No 'any' type — use 'unknown' if type is truly unknown"
+            echo "   Fix:  Replace with a proper interface or 'unknown'"
+            echo ""
+            echo "$MATCHES"
+            exit 1
+          fi
+
+          echo "✅ No 'any' types found."
+
+      # ── Check 7: takeUntil(destroy$) on subscriptions ──────
+      # BAD:  this._service.getData().subscribe(...)  with no takeUntil
+      # GOOD: this._service.getData().pipe(takeUntil(this._destroy$)).subscribe(...)
+      - name: "[Frontend] takeUntil on subscriptions"
+        run: |
+          echo "🔍 Checking subscriptions have takeUntil(destroy\$)..."
+
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            -- '*.ts' \
+            | grep -v '\.spec\.ts$' \
+            | grep -v 'node_modules' \
+            || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "✅ No .ts files changed — skipping."
+            exit 0
+          fi
+
+          VIOLATIONS=""
+          for FILE in $CHANGED_FILES; do
+            if [ ! -f "$FILE" ]; then continue; fi
+
+            # If file has .subscribe( but no takeUntil — flag it
+            HAS_SUBSCRIBE=$(grep -c '\.subscribe(' "$FILE" 2>/dev/null || echo "0")
+            HAS_TAKEUNTIL=$(grep -c 'takeUntil' "$FILE" 2>/dev/null || echo "0")
+
+            if [ "$HAS_SUBSCRIBE" -gt 0 ] && [ "$HAS_TAKEUNTIL" -eq 0 ]; then
+              VIOLATIONS="$VIOLATIONS\n  ⚠️  $FILE ($HAS_SUBSCRIBE subscription(s), 0 takeUntil)"
+            fi
+          done
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo ""
+            echo "❌ FAIL: Subscriptions without takeUntil(destroy\$) detected!"
+            echo "   Rule: Section 3.2 — Always use takeUntil(this._destroy\$) on every .subscribe()"
+            echo "   Fix:  Add takeUntil(this._destroy\$) in pipe() before .subscribe()"
+            echo ""
+            printf "$VIOLATIONS"
+            echo ""
+            exit 1
+          fi
+
+          echo "✅ All subscriptions appear to have takeUntil."
+
+      # ── Check 8: debounceTime on user input ────────────────
+      # BAD:  this.searchControl.valueChanges.pipe(switchMap(...)).subscribe(...)
+      # GOOD: ...pipe(debounceTime(300), distinctUntilChanged(), switchMap(...))
+      - name: "[Frontend] debounceTime on user input observables"
+        run: |
+          echo "🔍 Checking for debounceTime on valueChanges observables..."
+
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            -- '*.ts' \
+            | grep -v '\.spec\.ts$' \
+            | grep -v 'node_modules' \
+            || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "✅ No .ts files changed — skipping."
+            exit 0
+          fi
+
+          VIOLATIONS=""
+          for FILE in $CHANGED_FILES; do
+            if [ ! -f "$FILE" ]; then continue; fi
+
+            HAS_VALUECHANGES=$(grep -c 'valueChanges' "$FILE" 2>/dev/null || echo "0")
+            HAS_DEBOUNCETIME=$(grep -c 'debounceTime' "$FILE" 2>/dev/null || echo "0")
+
+            if [ "$HAS_VALUECHANGES" -gt 0 ] && [ "$HAS_DEBOUNCETIME" -eq 0 ]; then
+              VIOLATIONS="$VIOLATIONS\n  ⚠️  $FILE (has valueChanges but no debounceTime)"
+            fi
+          done
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo ""
+            echo "❌ FAIL: Missing debounceTime on valueChanges!"
+            echo "   Rule: Section 3.5 — Always debounceTime on user input observables"
+            echo "   Fix:  Add debounceTime(300) + distinctUntilChanged() in the pipe()"
+            echo ""
+            printf "$VIOLATIONS"
+            echo ""
+            exit 1
+          fi
+
+          echo "✅ debounceTime found on all valueChanges observables."
+
+  # ─────────────────────────────────────────────
+  # JOB 3: Summary Report
+  # Always runs — shows pass/fail summary on PR
+  # ─────────────────────────────────────────────
+  summary:
+    name: Checklist Summary
+    runs-on: ubuntu-latest
+    needs: [backend-checklist, frontend-checklist]
+    # Run even if previous jobs failed so we always get a summary
+    if: always()
+
+    steps:
+      - name: Print summary
+        run: |
+          BACKEND="${{ needs.backend-checklist.result }}"
+          FRONTEND="${{ needs.frontend-checklist.result }}"
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  Phoenix PR Checklist — Summary"
+          echo "  BERPLTech Coding Standards v1.8"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+
+          if [ "$BACKEND" = "success" ]; then
+            echo "  ✅ Backend checks    PASSED"
+          else
+            echo "  ❌ Backend checks    FAILED"
+          fi
+
+          if [ "$FRONTEND" = "success" ]; then
+            echo "  ✅ Frontend checks   PASSED"
+          else
+            echo "  ❌ Frontend checks   FAILED"
+          fi
+
+          echo ""
+          echo "  Checks run:"
+          echo "  [C#] 1. No fire-and-forget async"
+          echo "  [C#] 2. No new HttpClient()"
+          echo "  [C#] 3. No SQL string concatenation"
+          echo "  [C#] 4. No swallowed exceptions"
+          echo "  [C#] 5. No \$\"\" in log calls"
+          echo "  [TS] 6. No 'any' types"
+          echo "  [TS] 7. takeUntil on subscriptions"
+          echo "  [TS] 8. debounceTime on valueChanges"
+          echo ""
+          echo "  Reference: Section 8 — Code Review Checklist"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # Fail the job if any check failed (blocks PR merge)
+          if [ "$BACKEND" != "success" ] || [ "$FRONTEND" != "success" ]; then
+            exit 1
+          fi
