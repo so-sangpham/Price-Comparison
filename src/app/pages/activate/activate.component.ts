@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
 export interface ActivityTable {
   id: string;
@@ -13,12 +15,20 @@ export interface ActivityTable {
 @Component({
   selector: 'app-activate',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './activate.component.html',
   styleUrl: './activate.component.scss'
 })
 export class ActivateComponent implements OnInit {
   activityTables: ActivityTable[] = [];
+  filteredTables: ActivityTable[] = [];
+  searchQuery = '';
+  statusFilter = '';
+
+  totalCategories = 0;
+  activeCount = 0;
+  inactiveCount = 0;
+  activeRate = 0;
 
   activationCategories = [
     'Art Supply',
@@ -55,5 +65,21 @@ export class ActivateComponent implements OnInit {
       date: new Date(2026, 0, 15 - (index % 15)).toISOString().split('T')[0],
       description: `Compare products in ${category}`
     }));
+
+    this.totalCategories = this.activityTables.length;
+    this.activeCount = this.activityTables.filter(t => t.status === 'Active').length;
+    this.inactiveCount = this.activityTables.filter(t => t.status === 'Inactive').length;
+    this.activeRate = Math.round((this.activeCount / this.totalCategories) * 100);
+    this.filteredTables = [...this.activityTables];
+  }
+
+  filterTables() {
+    this.filteredTables = this.activityTables.filter(item => {
+      const matchesSearch = !this.searchQuery ||
+        item.category.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        item.name.toLowerCase().includes(this.searchQuery.toLowerCase());
+      const matchesStatus = !this.statusFilter || item.status === this.statusFilter;
+      return matchesSearch && matchesStatus;
+    });
   }
 }
