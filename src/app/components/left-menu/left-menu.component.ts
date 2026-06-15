@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { ProductListComponent } from '../../pages/product-list/product-list.component';
 import { CompetitorService } from '../../services/competitor.service';
 
@@ -36,7 +37,8 @@ export class LeftMenuComponent implements OnInit {
       id: 'competitor',
       label: 'Competitor',
       icon: 'pi-building',
-      isExpanded: true,
+      route: '/competitors',
+      isExpanded: false,
       children: []
     },
     {
@@ -53,7 +55,27 @@ export class LeftMenuComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.syncActiveFromUrl(this.router.url);
+
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
+        this.syncActiveFromUrl(event.urlAfterRedirects);
+      });
+
     this.loadCompetitors();
+  }
+
+  private syncActiveFromUrl(url: string) {
+    if (url === '/' || url === '') {
+      this.selectedMenuItem = 'dashboard';
+    } else if (url.startsWith('/competitor') || url.startsWith('/competitors')) {
+      this.selectedMenuItem = 'competitor';
+      const competitorItem = this.menuItems.find(i => i.id === 'competitor');
+      if (competitorItem) competitorItem.isExpanded = true;
+    } else if (url.startsWith('/report')) {
+      this.selectedMenuItem = 'report';
+    }
   }
 
   private loadCompetitors() {
@@ -82,12 +104,12 @@ export class LeftMenuComponent implements OnInit {
 
   selectMenuItem(item: MenuItem) {
     this.selectedMenuItem = item.id;
-    
+
     if (item.route) {
       this.router.navigate([item.route]);
     }
 
-    if (item.children) {
+    if (item.children !== undefined) {
       item.isExpanded = !item.isExpanded;
     }
   }
@@ -103,4 +125,3 @@ export class LeftMenuComponent implements OnInit {
     return this.selectedMenuItem === itemId;
   }
 }
-

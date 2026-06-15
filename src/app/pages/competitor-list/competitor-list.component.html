@@ -1,0 +1,52 @@
+<div class="competitor-list-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Competitors</h1>
+      <p class="page-subtitle">View and compare products from all tracked competitors</p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="state-box">
+    <i class="pi pi-spin pi-spinner"></i>
+    <p>Loading competitors...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!loading && error" class="state-box error">
+    <i class="pi pi-exclamation-circle"></i>
+    <p>Could not load competitors. Make sure the API server is running.</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && competitors.length === 0" class="state-box">
+    <i class="pi pi-inbox"></i>
+    <p>No competitors found.</p>
+  </div>
+
+  <!-- Competitor Cards -->
+  <div *ngIf="!loading && !error && competitors.length > 0" class="cards-grid">
+    <div
+      *ngFor="let competitor of competitors"
+      class="competitor-card"
+      (click)="viewCompetitor(competitor._id)"
+    >
+      <div class="card-avatar">{{ getInitial(competitor.competitorName) }}</div>
+      <div class="card-body">
+        <h3 class="card-name">{{ competitor.competitorName }}</h3>
+        <a class="card-url" [href]="competitor.url" target="_blank" (click)="$event.stopPropagation()">
+          <i class="pi pi-link"></i>
+          {{ getDomain(competitor.url) }}
+        </a>
+        <div class="card-meta">
+          <i class="pi pi-calendar"></i>
+          Added {{ formatDate(competitor.createdDateUtc) }}
+        </div>
+      </div>
+      <div class="card-action">
+        <i class="pi pi-arrow-right"></i>
+      </div>
+    </div>
+  </div>
+</div>
