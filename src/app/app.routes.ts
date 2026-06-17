@@ -5,12 +5,14 @@ import { ActivateComponent } from './pages/activate/activate.component';
 import { ActivateDetailComponent } from './pages/activate/activate-detail.component';
 import { ActivateEditComponent } from './pages/activate/activate-edit.component';
 import { ReportComponent } from './pages/report/report.component';
+import { CompetitorListComponent } from './pages/competitor-list/competitor-list.component';
 
 export const routes: Routes = [
   { path: '', component: ActivateComponent },
   { path: 'activate', component: ProductListComponent },
   { path: 'activate/detail', component: ActivateDetailComponent },
   { path: 'activate/edit', component: ActivateEditComponent },
+  { path: 'competitors', component: CompetitorListComponent },
   { path: 'competitor/:competitorId', component: ProductDetailComponent },
   { path: 'report', component: ReportComponent },
   { path: 'product/:id', component: ProductDetailComponent },
