@@ -53,73 +53,31 @@
     </div>
   </div>
 
-  <!-- Activity Table Card -->
-  <div class="table-card">
-    <div class="table-header">
-      <div class="table-title">
-        <h3>Activity Tables</h3>
-        <span class="table-count">{{ filteredTables.length }} categories</span>
+  <!-- Quick Links -->
+  <div class="quick-links">
+    <div class="quick-link-card" routerLink="/report">
+      <i class="pi pi-file-pdf"></i>
+      <div class="quick-link-info">
+        <span class="quick-link-title">View Reports</span>
+        <span class="quick-link-desc">See activity tables & price comparison</span>
       </div>
-      <div class="table-controls">
-        <div class="search-box">
-          <i class="pi pi-search"></i>
-          <input
-            type="text"
-            placeholder="Search categories..."
-            [(ngModel)]="searchQuery"
-            (input)="filterTables()"
-          />
-        </div>
-        <select class="filter-select" [(ngModel)]="statusFilter" (change)="filterTables()">
-          <option value="">All Status</option>
-          <option value="Active">Active</option>
-          <option value="Inactive">Inactive</option>
-        </select>
-      </div>
+      <i class="pi pi-arrow-right arrow"></i>
     </div>
-
-    <div class="table-wrapper">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Product</th>
-            <th>Status</th>
-            <th>Date</th>
-            <th>Description</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of filteredTables" class="table-row">
-            <td>
-              <div class="category-cell">
-                <span class="category-avatar">{{ item.category.charAt(0) }}</span>
-                {{ item.category }}
-              </div>
-            </td>
-            <td class="product-name">{{ item.name }}</td>
-            <td>
-              <span class="status-badge" [class]="item.status.toLowerCase()">
-                <span class="status-dot"></span>
-                {{ item.status }}
-              </span>
-            </td>
-            <td class="date-cell">{{ item.date | date:'MMM dd, yyyy' }}</td>
-            <td class="description-cell">{{ item.description }}</td>
-            <td>
-              <button class="action-btn" routerLink="/activate">
-                <i class="pi pi-arrow-right"></i>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div *ngIf="filteredTables.length === 0" class="empty-state">
-        <i class="pi pi-inbox"></i>
-        <p>No categories found</p>
+    <div class="quick-link-card" routerLink="/competitors">
+      <i class="pi pi-building"></i>
+      <div class="quick-link-info">
+        <span class="quick-link-title">Competitors</span>
+        <span class="quick-link-desc">Browse all tracked competitors</span>
       </div>
+      <i class="pi pi-arrow-right arrow"></i>
+    </div>
+    <div class="quick-link-card" routerLink="/activate">
+      <i class="pi pi-search"></i>
+      <div class="quick-link-info">
+        <span class="quick-link-title">Compare Products</span>
+        <span class="quick-link-desc">Find and compare product prices</span>
+      </div>
+      <i class="pi pi-arrow-right arrow"></i>
     </div>
   </div>
 </div>
