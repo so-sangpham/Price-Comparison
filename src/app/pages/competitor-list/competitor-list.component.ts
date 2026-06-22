@@ -32,7 +32,7 @@ export class CompetitorListComponent implements OnInit {
   ngOnInit() {
     this.competitorService.getCompetitors().subscribe({
       next: (response) => {
-        if (response.success && response.data && response.data.length > 0) {
+        if (response.success && response.data) {
           this.competitors = response.data;
         } else {
           this.competitors = MOCK_COMPETITORS;
@@ -40,6 +40,7 @@ export class CompetitorListComponent implements OnInit {
         this.loading = false;
       },
       error: () => {
+        this.error = true;
         this.competitors = MOCK_COMPETITORS;
         this.loading = false;
       }
