@@ -3,6 +3,15 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { CompetitorService, Competitor } from '../../services/competitor.service';
 
+const MOCK_COMPETITORS: Competitor[] = [
+  { _id: 'comp-1', competitorName: 'Amazon',   url: 'https://www.amazon.com',   createdDateUtc: '2025-06-01T00:00:00Z' },
+  { _id: 'comp-2', competitorName: 'Walmart',  url: 'https://www.walmart.com',  createdDateUtc: '2025-07-15T00:00:00Z' },
+  { _id: 'comp-3', competitorName: 'Staples',  url: 'https://www.staples.com',  createdDateUtc: '2025-08-20T00:00:00Z' },
+  { _id: 'comp-4', competitorName: 'Target',   url: 'https://www.target.com',   createdDateUtc: '2025-09-10T00:00:00Z' },
+  { _id: 'comp-5', competitorName: 'Best Buy', url: 'https://www.bestbuy.com',  createdDateUtc: '2025-10-05T00:00:00Z' },
+  { _id: 'comp-6', competitorName: 'Office Depot', url: 'https://www.officedepot.com', createdDateUtc: '2025-11-01T00:00:00Z' },
+];
+
 @Component({
   selector: 'app-competitor-list',
   standalone: true,
@@ -25,11 +34,14 @@ export class CompetitorListComponent implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           this.competitors = response.data;
+        } else {
+          this.competitors = MOCK_COMPETITORS;
         }
         this.loading = false;
       },
       error: () => {
         this.error = true;
+        this.competitors = MOCK_COMPETITORS;
         this.loading = false;
       }
     });
