@@ -13,8 +13,8 @@
     <p>Loading competitors...</p>
   </div>
 
-  <!-- Error State -->
-  <div *ngIf="!loading && error" class="state-box error">
+  <!-- Error State: only when API failed AND no fallback data available -->
+  <div *ngIf="!loading && error && competitors.length === 0" class="state-box error">
     <i class="pi pi-exclamation-circle"></i>
     <p>Could not load competitors. Make sure the API server is running.</p>
   </div>
@@ -25,8 +25,8 @@
     <p>No competitors found.</p>
   </div>
 
-  <!-- Competitor Cards -->
-  <div *ngIf="!loading && !error && competitors.length > 0" class="cards-grid">
+  <!-- Competitor Cards: show whenever we have data (real or mock) -->
+  <div *ngIf="!loading && competitors.length > 0" class="cards-grid">
     <div
       *ngFor="let competitor of competitors"
       class="competitor-card"
